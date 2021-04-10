@@ -84,15 +84,28 @@ class IOSWizard
   def start opts = nil
     @opts = opts || {}
 
-    if !(@opts.is_a? Hash) || !($gtk.args.fn.eq_any? @opts[:env], :dev, :prod)
+    unless $gtk.args.fn.eq_any? @opts[:env], :dev, :prod
       raise WizardException.new(
-              "* $wizards.ios.start needs to be provided an environment option.",
-              "** For development builds type: $wizards.ios.start env: :dev",
-              "** For production builds type: $wizards.ios.start env: :prod"
-            )
+        "* $wizards.ios.start needs to be provided an environment option.",
+        "** For development builds type: $wizards.ios.start env: :dev",
+        "** For production builds type: $wizards.ios.start env: :prod"
+      )
     end
 
     @production_build = (@opts[:env] == :prod)
+    @version = @opts[:version]
+    @version ||= Object.const_defined?('VERSION') ? VERSION : nil
+
+    if @production_build && @version.empty?
+      raise WizardException.new(
+        "* $wizards.ios.start needs to be provided a version option or VERSION constant should be defined",
+        "** For production builds type: $wizards.ios.start env: :prod, version: 1.0"
+      )
+    end
+
+    @version = @version.to_s
+    log_info "I will be using version: '#{@version}'" if @production_build
+
     @steps = steps_development_build
     @steps = steps_production_build if @production_build
     @certificate_name = nil
@@ -798,7 +811,7 @@ XML
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>CFBundleShortVersionString</key>
-        <string>5.2</string>
+        <string>:version</string>
         <key>CFBundleSignature</key>
         <string>????</string>
         <key>CFBundleSupportedPlatforms</key>
@@ -890,6 +903,7 @@ XML
 
     info_plist_string.gsub!(":app_name", @app_name)
     info_plist_string.gsub!(":app_id", @app_id)
+    info_plist_string.gsub!(":version", @version);
 
     $gtk.write_file_root "tmp/ios/#{@app_name}.app/Info.plist", info_plist_string.strip
 
