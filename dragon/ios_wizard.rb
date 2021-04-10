@@ -1,3 +1,4 @@
+# Contributors outside of DragonRuby who also hold Copyright: Michał Dudziński
 # Copyright 2019 DragonRuby LLC
 # MIT License
 # ios_wizard.rb has been released under MIT (*only this file*).
